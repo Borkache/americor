@@ -1,0 +1,46 @@
+### Common
+В целом по проекту надо добавить declare strict_type=1;<br>
+Добавить типы входящих аргументов и возвращаемых значений: **public function actionExport($exportType)** -->
+**public function actionExport(string $exportType): string**<br>
+
+
+
+### models/History.php
+
+вынести константы в Enum имплементацию или аналогичный класс если версия php не позволяет<br>
+**const EVENT_CREATED_TASK = 'created_task';**<br>
+уменьшаем модель, убираем сопутствующие методы :<br>
+public static function getEventTexts()<br>
+public static function getEventTextByEvent($event)<br>
++ избавляемся от статики
++ чище логика самой модели
+
+
+###  widgets/HistoryList/views/_item.php
+выносим логику, разделяем отображение и Strategy реализованную тут, стратегия может возвращать DTO с именем view для рендера (_item_common) и данные ([])
+render footer так же выносим в отдельную стратегию, для чистоты.<br>
+потенциально опасное место т.к создержит много логики + растет с каждым новым типом ивента<br>
+Для типов historyEvent создаем Фабрику, инкапсулируем логику в ней. <br>
+Создаем interface HistoryItemFactoryInterface и имплетментируем его + дает нам возможность покрытия для будущих новых типов.
+
+
+
+### widgets/HistoryList/HistoryList.php
+query Params никак не валидируются<br>
+Export::FORMAT_CSV - статичен, нет возможности задать другой формат, в идеале передавать в запросу + валидация<br>
+
+
+### widgets/HistoryList/helpers/HistoryListHelper.php
+может удален полность, логика может быть вынесена в HistoryItemFactoryInterface
+
+
+### models/search/HistorySearch.php
+Добавить интерфейс HistorySearchInterface
+public function search($params) - $params задать тип или заменить на DTO<br>
+ActiveDataProvider - передавать через IOC или DI, заменить на interface<br>
+$query->addSelect('history.*'); - в идеале избавиться от * и заменить на необхоидмые поля, с учетом связей с другими таблицами, нет необходимости подтягивтаь все поля из всех моделей\ таблиц
+
+
+### export 
+для больших объемов как правило используется отложенный export, с ссылкой на результат, в идеале кладем в очередь задачу, потом отдаем ссылку<br> 
+Для экономии памяти можно и нужно использовать генераторы.
